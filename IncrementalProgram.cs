@@ -102,26 +102,12 @@ namespace ClassDiagramOptimization
             stopwatch.Stop();
             Console.WriteLine("Model optimization took {0}ms", stopwatch.ElapsedMilliseconds);
 
-            double cohesion = classModel.Classes.AsEnumerable()
-                                .Sum(cl => mai.Evaluate(cl, cl) / atLeastOne(cl.Encapsulates.OfType<IAttribute>().Count() * cl.Encapsulates.OfType<Method>().Count())
-                                           + mmi.Evaluate(cl, cl) / combinationCount(cl.Encapsulates.OfType<Method>().Count()));
-            double coupling = (from cl_i in classModel.Classes.AsEnumerable()
-                               from cl_j in classModel.Classes.AsEnumerable()
-                               where cl_i != cl_j
-                               select mai.Evaluate(cl_i, cl_j) / atLeastOne(cl_i.Encapsulates.OfType<Method>().Count() * cl_j.Encapsulates.OfType<IAttribute>().Count())
-                                      + mmi.Evaluate(cl_i, cl_j) / atLeastOne(cl_i.Encapsulates.OfType<Method>().Count() * (cl_j.Encapsulates.OfType<Method>().Count() - 1))).Sum();
-
-            Console.WriteLine("Cohesion = {0}", cohesion);
-            Console.WriteLine("Coupling = {0}", coupling);
-            Console.WriteLine("CRA-Index = {0}", cohesion - coupling);
-
             stopwatch.Restart();
             classModel.Name = "Incrementally Optimized Class Model";
             repository.Save(classModel, Path.ChangeExtension(args[0], ".OutputInc.xmi"));
             stopwatch.Stop();
 
             Console.WriteLine("Serializing result model took {0}ms", stopwatch.ElapsedMilliseconds);
-            Console.Read();
         }
     }
 }
