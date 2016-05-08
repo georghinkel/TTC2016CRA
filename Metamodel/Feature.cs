@@ -76,8 +76,9 @@ namespace TTC2016.ArchitectureCRA.ArchitectureCRA
                         }
                         value.Deleted += this.OnResetIsEncapsulatedBy;
                     }
-                    this.OnPropertyChanged("IsEncapsulatedBy");
-                    this.OnIsEncapsulatedByChanged(new ValueChangedEventArgs(old, value));
+                    ValueChangedEventArgs e = new ValueChangedEventArgs(old, value);
+                    this.OnIsEncapsulatedByChanged(e);
+                    this.OnPropertyChanged("IsEncapsulatedBy", e);
                 }
             }
         }

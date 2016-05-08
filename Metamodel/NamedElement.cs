@@ -64,8 +64,9 @@ namespace TTC2016.ArchitectureCRA.ArchitectureCRA
                 {
                     string old = this._name;
                     this._name = value;
-                    this.OnNameChanged(new ValueChangedEventArgs(old, value));
-                    this.OnPropertyChanged("Name");
+                    ValueChangedEventArgs e = new ValueChangedEventArgs(old, value);
+                    this.OnNameChanged(e);
+                    this.OnPropertyChanged("Name", e);
                 }
             }
         }
