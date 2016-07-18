@@ -33,32 +33,32 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>ClassDiagramOptimization.Program</StartupObject>
+    <StartupObject>ClassDiagramOptimization.MemoizedProgram</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NMF.Collections">
-      <HintPath>packages\NMFRepository.1.0.5\lib\net40\NMF.Collections.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="NMF.Collections, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NMF\Models\Models\bin\Release\NMF.Collections.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Expressions, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\NMFExpressions.1.0.5\lib\net45\NMF.Expressions.dll</HintPath>
-      <Private>True</Private>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NMF\Models\Models\bin\Release\NMF.Expressions.dll</HintPath>
     </Reference>
     <Reference Include="NMF.Expressions.Linq, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\NMFExpressions.1.0.5\lib\net45\NMF.Expressions.Linq.dll</HintPath>
-      <Private>True</Private>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NMF\Models\Models\bin\Release\NMF.Expressions.Linq.dll</HintPath>
     </Reference>
-    <Reference Include="NMF.Models">
-      <HintPath>packages\NMFRepository.1.0.5\lib\net40\NMF.Models.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="NMF.Models, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NMF\Models\Models\bin\Release\NMF.Models.dll</HintPath>
     </Reference>
-    <Reference Include="NMF.Serialization">
-      <HintPath>packages\NMFRepository.1.0.5\lib\net40\NMF.Serialization.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="NMF.Serialization, Version=1.0.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NMF\Models\Models\bin\Release\NMF.Serialization.dll</HintPath>
     </Reference>
-    <Reference Include="NMF.Utilities">
-      <HintPath>packages\NMFRepository.1.0.5\lib\net40\NMF.Utilities.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="NMF.Utilities, Version=1.0.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\NMF\Models\Models\bin\Release\NMF.Utilities.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -70,6 +70,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MemoizedProgram.cs" />
     <Compile Include="Metamodel\Attribute.cs" />
     <Compile Include="Metamodel\Class.cs" />
     <Compile Include="Metamodel\ClassEncapsulatesCollection.cs" />

@@ -6,12 +6,10 @@ using System.Linq;
 using NMF.Models.Repository;
 using NMF.Utilities;
 using TTC2016.ArchitectureCRA.ArchitectureCRA;
-using NMF.Expressions;
-using NMF.Expressions.Linq;
 
 namespace ClassDiagramOptimization
 {
-    class IncrementalProgram
+    class MemoizedProgram
     {
         static void Main(string[] args)
         {
@@ -84,73 +82,16 @@ namespace ClassDiagramOptimization
             var combinationCount = new Func<int, int>(i => i * (i - 1));
             var divideOrZero = new Func<double, double, double>((a, b) => b == 0 ? 0 : a / b);
 
-            var M = new MemoizedFunc<IClass, int>(cl => cl == null ? 0 : cl.Encapsulates.OfType<Method>().Count());
-            var A = new MemoizedFunc<IClass, int>(cl => cl == null ? 0 : cl.Encapsulates.OfType<IAttribute>().Count());
+            var M = new MemoizedFunc<IClass, int>(cl => cl.Encapsulates.OfType<Method>().Count());
+            var A = new MemoizedFunc<IClass, int>(cl => cl.Encapsulates.OfType<IAttribute>().Count());
 
             var MAI = new MemoizedFunc<IClass, IClass, double>((cl_i, cl_j) =>
-                cl_i == null || cl_j == null ? 0 : 
                 cl_i.Encapsulates.OfType<Method>()
                     .Sum(m => m.DataDependency.Intersect(cl_j.Encapsulates).Count()));
 
             var MMI = new MemoizedFunc<IClass, IClass, double>((cl_i, cl_j) =>
-                cl_i == null || cl_j == null ? 0 :
                 cl_i.Encapsulates.OfType<Method>()
                     .Sum(m => m.FunctionalDependency.Intersect(cl_j.Encapsulates).Count()));
-
-            var dataDependingClassesCoupling = new ObservingFunc<IClass, IClass, double>(
-                (cl_i, cl_j) =>
-                    (from att in cl_i.Encapsulates.OfType<IAttribute>().Concat(cl_j.Encapsulates.OfType<IAttribute>())
-                     from meth in dataDependencyCounts[att]
-                     select meth.IsEncapsulatedBy).Distinct().Sum(ck => 
-                        ck == cl_i || ck == cl_j ? 0
-                            : (divideOrZero(MAI[ck, cl_i], M[ck] * A[cl_i]) + 
-                               divideOrZero(MAI[ck, cl_j], A[cl_j] * M[ck]) - 
-                               divideOrZero(MAI[ck, cl_i] + MAI[ck, cl_j], (A[cl_i] + A[cl_j]) * M[ck]))
-                     ));
-            var dataDependingClassesCouplingMemo = new MemoizedFunc<IClass, IClass, INotifyValue<double>>(
-                (cl_i, cl_j) => dataDependingClassesCoupling.Observe(cl_i, cl_j));
-
-            var functionalDependingClassesCoupling = new ObservingFunc<IClass, IClass, double>(
-                (cl_i, cl_j) =>
-                    (from m2 in cl_i.Encapsulates.OfType<Method>().Concat(cl_j.Encapsulates.OfType<Method>())
-                     from meth in functionalDependencyCounts[m2]
-                     select meth.IsEncapsulatedBy).Distinct().Sum(ck =>
-                        ck == cl_i || ck == cl_j ? 0
-                           : (divideOrZero(MMI[ck, cl_i], (M[cl_i] - 1) * M[ck]) +
-                              divideOrZero(MMI[ck, cl_j], (M[cl_j] - 1) * M[ck]) -
-                              divideOrZero(MMI[ck, cl_i] + MMI[ck, cl_j], (M[cl_i] + M[cl_j] - 1) * M[ck]))
-                     ));
-
-            var functionalDependingClassesCouplingMemo = new MemoizedFunc<IClass, IClass, INotifyValue<double>>(
-                (cl_i, cl_j) => functionalDependingClassesCoupling.Observe(cl_i, cl_j));
-
-            var dataDependentClassesCoupling = new ObservingFunc<IClass, IClass, double>(
-                (cl_i, cl_j) =>
-                    (from meth in cl_i.Encapsulates.OfType<Method>().Concat(cl_j.Encapsulates.OfType<Method>())
-                     from dataDep in meth.DataDependency
-                     select dataDep.IsEncapsulatedBy).Distinct().Sum(ck =>
-                        divideOrZero(MAI[cl_i, ck], M[cl_i] * A[ck]) + 
-                        divideOrZero(MAI[cl_j, ck], M[cl_j] * A[ck]) - 
-                        divideOrZero(MAI[cl_i, ck] + MAI[cl_j, ck], (M[cl_i] + M[cl_j]) * A[ck])
-                     ));
-            var dataDependentClassesCouplingMemo = new MemoizedFunc<IClass, IClass, INotifyValue<double>>(
-                (cl_i, cl_j) => dataDependentClassesCoupling.Observe(cl_i, cl_j));
-
-            var functionalDependentClassesCoupling = new ObservingFunc<IClass, IClass, double>(
-                (cl_i, cl_j) =>
-                    (from meth in cl_i.Encapsulates.OfType<Method>().Concat(cl_j.Encapsulates.OfType<Method>())
-                     from functionalDep in meth.FunctionalDependency
-                     select functionalDep.IsEncapsulatedBy).Distinct().Sum(ck =>
-                        ck == cl_i || ck == cl_j ? 0
-                           : divideOrZero(MMI[cl_i, ck], M[cl_i] * M[ck]) + 
-                             divideOrZero(MMI[cl_j, ck], M[cl_j] * M[ck]) - 
-                             divideOrZero(MMI[cl_i, ck] + MMI[cl_j, ck], (M[cl_i] + M[cl_j]) * M[ck])
-                     ));
-
-            var functionalDependentClassesCouplingMemo = new MemoizedFunc<IClass, IClass, INotifyValue<double>>(
-                (cl_i, cl_j) => functionalDependingClassesCoupling.Observe(cl_i, cl_j));
-
-
 
             var Effect = new Func<IClass, IClass, double>((cl_i, cl_j) =>
             {
@@ -172,10 +113,56 @@ namespace ClassDiagramOptimization
                         divideOrZero(MMI_i + MMI_ij + MMI_ji + MMI_j, combinationCount(M_i + M_j)) - divideOrZero(MMI_i, combinationCount(M_i)) - divideOrZero(MMI_j, combinationCount(M_j));
                 var deltaCouplingij = // Delta of Coupling between C_i and C_j
                         divideOrZero(MAI_ij, M_i * A_j) + divideOrZero(MAI_ji, M_j * A_i) + divideOrZero(MMI_ij, M_i * (M_j - 1)) + divideOrZero(MMI_ji, M_j * (M_i - 1));
-
+                var classIAttributes = cl_i.Encapsulates.OfType<IAttribute>();
+                var classJAttributes = cl_j.Encapsulates.OfType<IAttribute>();
+                var classIMethods = cl_i.Encapsulates.OfType<Method>();
+                var classJMethods = cl_j.Encapsulates.OfType<Method>();
+                var dataDependingClasses = (from att in classIAttributes.Concat(classJAttributes)
+                                            from meth in dataDependencyCounts[att]
+                                            select meth.IsEncapsulatedBy).Distinct();
+                var functionalDependingClasses = (from m2 in classIMethods.Concat(classJMethods)
+                                                  from meth in functionalDependencyCounts[m2]
+                                                  select meth.IsEncapsulatedBy).Distinct();
                 var deltaCouplingFromOthers = // Coupling from other classes
-                        dataDependingClassesCouplingMemo[cl_i, cl_j].Value + functionalDependingClassesCouplingMemo[cl_i, cl_j].Value;
-                var deltaCouplingToOthers = dataDependentClassesCouplingMemo[cl_i, cl_j].Value + functionalDependentClassesCouplingMemo[cl_i, cl_j].Value;
+                        dataDependingClasses.Sum(ck =>
+                        {
+                            if (ck == cl_i || ck == cl_j) return 0;
+                            var mai_ki = MAI[ck, cl_i];
+                            var mai_kj = MAI[ck, cl_j];
+                            var m_k = M[ck];
+                            return (divideOrZero(mai_ki, m_k * A_i) + divideOrZero(mai_kj, A_j * m_k) - divideOrZero(mai_ki + mai_kj, (A_i + A_j) * m_k));
+                        })
+                        +
+                        functionalDependingClasses.Sum(ck =>
+                        {
+                            if (ck == cl_i || ck == cl_j) return 0;
+                            var mmi_ki = MMI[ck, cl_i];
+                            var mmi_kj = MMI[ck, cl_j];
+                            var m_k = M[ck];
+                            return (divideOrZero(mmi_ki, (M_i - 1) * m_k) + divideOrZero(mmi_kj, (M_j - 1) * m_k) - divideOrZero(mmi_ki + mmi_kj, (M_i + M_j - 1) * m_k));
+                        });
+                var dataDependentClasses = (from meth in classIMethods.Concat(classJMethods)
+                                            from dataDep in meth.DataDependency
+                                            select dataDep.IsEncapsulatedBy).Distinct();
+                var FunctionalDependentClasses = (from meth in classIMethods.Concat(classJMethods)
+                                                  from funDep in meth.FunctionalDependency
+                                                  select funDep.IsEncapsulatedBy).Distinct();
+                var deltaCouplingToOthers = dataDependentClasses.Sum(ck =>
+                {
+                    var mai_ik = MAI[cl_i, ck];
+                    var mai_jk = MAI[cl_j, ck];
+                    var a_k = A[ck];
+                    return (divideOrZero(mai_ik, M_i * a_k) + divideOrZero(mai_jk, M_j * a_k) - divideOrZero(mai_ik + mai_jk, (M_i + M_j) * a_k));
+                })
+                        +
+                        FunctionalDependentClasses.Sum(ck =>
+                        {
+                            if (ck == cl_i || ck == cl_j) return 0;
+                            var mmi_ik = MMI[cl_i, ck];
+                            var mmi_jk = MMI[cl_j, ck];
+                            var m_k = M[ck] - 1;
+                            return (divideOrZero(mmi_ik, M_i * m_k) + divideOrZero(mmi_jk, M_j * m_k) - divideOrZero(mmi_ik + mmi_jk, (M_i + M_j) * m_k));
+                        });
                 return deltaCohesionDataDep + deltaCohesionFunctionalDep + deltaCouplingij + deltaCouplingToOthers + deltaCouplingFromOthers;
             });
 
@@ -222,9 +209,10 @@ namespace ClassDiagramOptimization
 
             stopwatch.Stop();
             Console.WriteLine("Model optimization took {0}ms", stopwatch.ElapsedMilliseconds);
+
             using (var writer = File.AppendText("results.csv"))
             {
-                writer.WriteLine("Incremental;{0};{1}", stopwatch.ElapsedMilliseconds, args[0]);
+                writer.WriteLine("Memoized;{0};{1}", stopwatch.ElapsedMilliseconds, args[0]);
             }
 
             Console.WriteLine("Output contains {0} classes", classModel.Classes.Count);
